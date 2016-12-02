@@ -4,6 +4,7 @@ to compile and run from root folder.
  */
 use std::io::prelude::*;
 use std::fs::File;
+use std::collections::HashSet;
 
 fn read(filename: &String) -> String {
     let mut file = File::open(filename).unwrap();
@@ -38,11 +39,14 @@ fn main() {
     let mut direction_index = 4000; // 4000 to prevent overflow with negative direction_index (see direction_index - 1)
     let mut position = (0, 0);
 
+    let mut found_visited_twice = false;
+    let mut visited: HashSet<(i32, i32)> = HashSet::new();
+
     let items = content.lines().next().unwrap().split(", ");
     for item in items {
         let letter = item.chars().nth(0).unwrap();
-        let t : &[char] = &['L', 'R'];
-        let n = item.to_string().trim_matches(t).parse::<i32>().unwrap();
+        let trim_chars : &[char] = &['L', 'R'];
+        let n = item.to_string().trim_matches(trim_chars).parse::<i32>().unwrap();
 
         // turn
         if letter == 'L' {
@@ -54,8 +58,21 @@ fn main() {
         }
 
         let current_direction = directions[direction_index % directions.len()];
+        /*
+        // was usefull for solution a
         let movement = mul(current_direction, n);
         position = add(position, movement);
+        */
+
+        for i in 0..n {
+            position = add(position, current_direction);
+
+            if visited.contains(&position) && found_visited_twice == false {
+                found_visited_twice = true;
+                println!("visited twice distance: {}", position.0.abs() + position.1.abs());
+            }
+            visited.insert(position);
+        }
     }
-    println!("{}", position.0 + position.1);
+    println!("final distance: {}", position.0 + position.1);
 }
