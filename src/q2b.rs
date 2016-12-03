@@ -4,13 +4,11 @@ to compile and run from root folder.
  */
 use std::io::prelude::*;
 use std::fs::File;
-use std::collections::HashSet;
 
 fn read(filename: &String) -> String {
     let mut file = File::open(filename).unwrap();
     let mut buff: Vec<u8> = Vec::new();
-    #[allow(unused_must_use)]
-    file.read_to_end(&mut buff);
+    let _ = file.read_to_end(&mut buff);
     let content = std::str::from_utf8(&buff).unwrap();
     return content.to_string();
 }
@@ -45,11 +43,11 @@ fn main() {
     let mut values: Vec<char> = Vec::new();
     for line in content.lines() {
         let mut position = (0, 2);
-        let mut value = '5';
+        let mut value = pad(position);
         for c in line.chars() {
             let movement = match c {
                 'U' => ( 0, -1),
-                'D' => ( 0, 1),
+                'D' => ( 0,  1),
                 'R' => ( 1,  0),
                 'L' => (-1,  0),
                 _ => panic!("should never get here...")
