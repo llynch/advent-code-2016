@@ -1,0 +1,24 @@
+[package]
+name = "advent-code-2016"
+version = "0.1.0"
+authors = ["lynch <louis.lynch@gmail.com>"]
+
+[[bin]]
+name = "q1"
+path = "src/q1.rs"
+
+[[bin]]
+name = "q2"
+path = "src/q2.rs"
+
+[[bin]]
+name = "q2b"
+path = "src/q2b.rs"
+
+[[bin]]
+name = "q3"
+path = "src/q3.rs"
+
+[dependencies]
+regex = "0.1.80"
+
