@@ -19,6 +19,11 @@ path = "src/q2b.rs"
 name = "q3"
 path = "src/q3.rs"
 
+[[bin]]
+name = "q4"
+path = "src/q4.rs"
+
 [dependencies]
 regex = "0.1.80"
+lazy_static = "0.2.2"
 
