@@ -15,7 +15,34 @@ use std::cmp::Ordering;
 mod utils;
 
 lazy_static! {
-    static ref re_inner_braquet : Regex = Regex::new(r"^(?P<before>[-\da-zA-Z]+)-(?P<sector_id>\d+)\[(?P<inner>[:alpha:]+)\]$").unwrap();
+    static ref re_inner_braquet : Regex = Regex::new(r"^(?P<encrypted_name>[-\da-zA-Z]+)-(?P<sector_id>\d+)\[(?P<hash>[:alpha:]+)\]$").unwrap();
+}
+
+pub struct Room {
+    pub encrypted_name: String,
+    pub sector_id: i32,
+    pub hash: String
+}
+
+impl Room {
+    fn new<S: Into<String>>(encrypted_name: S, sector_id: i32, hash: S) -> Room {
+        return Room {
+            encrypted_name: encrypted_name.into().to_string().to_owned(),
+            sector_id: sector_id,
+            hash: hash.into().to_string().to_owned()
+        };
+    }
+}
+
+//impl Copy for Room { }
+impl Clone for Room {
+    fn clone(&self) -> Room {
+        return Room {
+            encrypted_name: self.encrypted_name.clone(),
+            sector_id: self.sector_id,
+            hash: self.hash.clone()
+        };
+    }
 }
 
 fn count_freq(text: &str) -> HashMap<char, i32> {
@@ -40,8 +67,7 @@ fn count_freq(text: &str) -> HashMap<char, i32> {
 
 fn sort_by_freq(freq: HashMap<char, i32>) -> Vec<(char, i32)> {
     // order them
-    let mut letters: Vec<(char, i32)> = Vec::new();
-    letters = freq.iter().map(|(c, n)| (c.clone(), n.clone())).collect();
+    let mut letters: Vec<(char, i32)> = freq.iter().map(|(c, n)| (*c, *n)).collect();
     letters.sort_by(
         |a, b| 
         match b.1.cmp(&a.1) { 
@@ -53,46 +79,38 @@ fn sort_by_freq(freq: HashMap<char, i32>) -> Vec<(char, i32)> {
     return letters;
 }
 
-fn check(line: &str) -> bool {
+fn check(room: Room) -> bool {
     // fn (s: String) -> str { return &(s)[..]; }
-    let hash : &str = &(re_inner_braquet.replace(line, "$inner"))[..];
-    let before : &str = &(re_inner_braquet.replace(line, "$before"))[..];
-
-    let result :Vec<(char, i32)> = sort_by_freq(count_freq(before));
+    let result :Vec<(char, i32)> = sort_by_freq(count_freq(&(room.encrypted_name)[..]));
     let hash_computed : Vec<char> = result.iter().map(|e| e.0).take(5).collect();
     let hash_computed_string: String = hash_computed.into_iter().collect();
 
     /*
-    println!("{}", line);
-    println!("{}", hash);
+    println!("{}", room.encrypted_name);
+    println!("{}", room.hash);
     println!("{}", hash_computed_string);
     */
 
-    return hash == hash_computed_string;
+    return &(room.hash)[..] == hash_computed_string;
 }
 
 fn shift(c: char, n: i32) -> char {
     let min = "abcdefghijklmnopqrstuvwxyz".to_string();
-    let caps = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".to_string();
 
     if c == '-' {
         return ' ';
     }
 
-    if min.contains(c) {
-        let index = min.chars().position(|r| r == c).unwrap();
-        let vc: Vec<char> =  min.chars().collect();
-        let new_c: char = vc[(index + n as usize) % min.len()];
-        return new_c;
-    }
-
-    return '/';
+    let index = min.chars().position(|r| r == c).unwrap();
+    let vc: Vec<char> =  min.chars().collect();
+    let new_c: char = vc[(index + n as usize) % min.len()];
+    return new_c;
 }
 
 fn main() {
     // test regexes
-    assert_eq!(re_inner_braquet.replace("abcd-cds-312[abc]", "$inner"), "abc");
-    assert_eq!(re_inner_braquet.replace("abcd-cds-312[abc]", "$before"), "abcd-cds");
+    assert_eq!(re_inner_braquet.replace("abcd-cds-312[abc]", "$hash"), "abc");
+    assert_eq!(re_inner_braquet.replace("abcd-cds-312[abc]", "$encrypted_name"), "abcd-cds");
     assert_eq!(re_inner_braquet.replace("abcd-cds-312[abc]", "$sector_id"), "312");
 
     // test frequent counter
@@ -103,25 +121,34 @@ fn main() {
         sort_by_freq(count_freq("abccd")), 
         vec!(('c', 2), ('a', 1), ('b', 1), ('d', 1)));
 
-    // https://doc.rust-lang.org/std/env/fn.args.html
-    let args: Vec<String> = std::env::args().collect();
-    let filename = &args[1];
-    let content = utils::read(filename);
 
+    // https://doc.rust-lang.org/std/env/fn.args.html
+    let filename = &std::env::args().nth(1).unwrap();
+    let content : String = utils::read(filename);
     let mut count = 0;
-    let mut real_rooms: Vec<&str> = Vec::new();
+    let mut real_rooms: Vec<Room> = Vec::new();
     for line in content.lines() {
-        if check(line) {
-            real_rooms.push(line);
+
+        let new_line = re_inner_braquet.replace_all(line, "$encrypted_name, $sector_id, $hash").to_string().clone();
+        let mut split = new_line.split(", ");
+
+        let room = Room::new(
+            split.nth(0).unwrap().to_string(),
+            split.nth(0).unwrap().to_string().parse::<i32>().unwrap(),
+            split.nth(0).unwrap().to_string()
+        );
+
+        if check(room.clone()) {
+            real_rooms.push(room.clone());
             count = count + 1;
         }
     }
 
     let mut sum = 0;
     for room in real_rooms {
-        let sector_id: i32 = re_inner_braquet.replace(room, "$sector_id").parse::<i32>().unwrap();
+        let sector_id: i32 = room.sector_id;
         sum += sector_id;
-        let encrypted_name: &str = &(re_inner_braquet.replace(room, "$before"))[..];
+        let encrypted_name: &str = &(room.encrypted_name)[..];
 
         let mut decrypted_name : Vec<char> = Vec::new();
         for c in encrypted_name.chars() {
@@ -131,7 +158,7 @@ fn main() {
 
         let decrypted_name_string: String = decrypted_name.into_iter().collect();
         // use grep to search for specific name. we print them all.
-        println!("{}: {}", room, decrypted_name_string);
+        println!("{}: {}", room.sector_id, decrypted_name_string);
     }
     println!("sum sector_id: {}", sum);
 }
