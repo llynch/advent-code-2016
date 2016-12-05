@@ -23,7 +23,12 @@ path = "src/q3.rs"
 name = "q4"
 path = "src/q4.rs"
 
+[[bin]]
+name = "q5"
+path = "src/q5.rs"
+
 [dependencies]
 regex = "0.1.80"
 lazy_static = "0.2.2"
+rust-crypto = "0.2.36"
 
