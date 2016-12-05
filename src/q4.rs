@@ -25,16 +25,18 @@ pub struct Room {
 }
 
 impl Room {
-    fn new<S: Into<String>>(encrypted_name: S, sector_id: i32, hash: S) -> Room {
+
+    fn new(line: &str) -> Room {
+        let caps = re_inner_braquet.captures(line).unwrap();
+
         return Room {
-            encrypted_name: encrypted_name.into().to_string().to_owned(),
-            sector_id: sector_id,
-            hash: hash.into().to_string().to_owned()
-        };
+            encrypted_name : caps.name("encrypted_name").unwrap().to_string(),
+            sector_id : caps.name("sector_id").unwrap().parse::<i32>().unwrap(),
+            hash : caps.name("hash").unwrap().to_string()
+        }
     }
 }
 
-//impl Copy for Room { }
 impl Clone for Room {
     fn clone(&self) -> Room {
         return Room {
@@ -79,7 +81,7 @@ fn sort_by_freq(freq: HashMap<char, i32>) -> Vec<(char, i32)> {
     return letters;
 }
 
-fn check(room: Room) -> bool {
+fn check(room: &Room) -> bool {
     // fn (s: String) -> str { return &(s)[..]; }
     let result :Vec<(char, i32)> = sort_by_freq(count_freq(&(room.encrypted_name)[..]));
     let hash_computed : Vec<char> = result.iter().map(|e| e.0).take(5).collect();
@@ -96,6 +98,7 @@ fn check(room: Room) -> bool {
 
 fn shift(c: char, n: i32) -> char {
     let min = "abcdefghijklmnopqrstuvwxyz".to_string();
+    let min_len = min.len();
 
     if c == '-' {
         return ' ';
@@ -103,7 +106,7 @@ fn shift(c: char, n: i32) -> char {
 
     let index = min.chars().position(|r| r == c).unwrap();
     let vc: Vec<char> =  min.chars().collect();
-    let new_c: char = vc[(index + n as usize) % min.len()];
+    let new_c: char = vc[(index + n as usize) % min_len];
     return new_c;
 }
 
@@ -121,41 +124,23 @@ fn main() {
         sort_by_freq(count_freq("abccd")), 
         vec!(('c', 2), ('a', 1), ('b', 1), ('d', 1)));
 
-
     // https://doc.rust-lang.org/std/env/fn.args.html
     let filename = &std::env::args().nth(1).unwrap();
     let content : String = utils::read(filename);
-    let mut count = 0;
     let mut real_rooms: Vec<Room> = Vec::new();
     for line in content.lines() {
-
-        let new_line = re_inner_braquet.replace_all(line, "$encrypted_name, $sector_id, $hash").to_string().clone();
-        let mut split = new_line.split(", ");
-
-        let room = Room::new(
-            split.nth(0).unwrap().to_string(),
-            split.nth(0).unwrap().to_string().parse::<i32>().unwrap(),
-            split.nth(0).unwrap().to_string()
-        );
-
-        if check(room.clone()) {
+        let room = Room::new(line);
+        if check(&room) {
             real_rooms.push(room.clone());
-            count = count + 1;
         }
     }
 
     let mut sum = 0;
     for room in real_rooms {
-        let sector_id: i32 = room.sector_id;
-        sum += sector_id;
+        sum += room.sector_id;
         let encrypted_name: &str = &(room.encrypted_name)[..];
 
-        let mut decrypted_name : Vec<char> = Vec::new();
-        for c in encrypted_name.chars() {
-            let new_c = shift(c, sector_id);
-            decrypted_name.push(new_c)
-        }
-
+        let decrypted_name : Vec<char> = encrypted_name.chars().map(|c| shift(c, room.sector_id)).collect();
         let decrypted_name_string: String = decrypted_name.into_iter().collect();
         // use grep to search for specific name. we print them all.
         println!("{}: {}", room.sector_id, decrypted_name_string);
