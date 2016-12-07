@@ -4,7 +4,9 @@ extern crate regex;
 
 use regex::Regex;
 
+use std::io::BufRead;
 use std::str;
+use std::io;
 use std::collections::HashMap;
 use std::cmp::Ordering;
 
@@ -76,10 +78,12 @@ fn check_pair2(s: &str) -> (bool, Vec<[char; 3]>) {
 
 fn main() {
     let q = &std::env::args().nth(1).unwrap();
-    let filename = &std::env::args().nth(2).unwrap();
-    let content : String = utils::read(filename);
+    //let filename = &std::env::args().nth(2).unwrap();
+    //let content = utils::read2(filename);
 
-    for line in content.lines() {
+    let stdin = io::stdin();
+    for l in stdin.lock().lines() {
+        let line = &l.unwrap();
         if line.trim() == "" {
             continue;
         }
