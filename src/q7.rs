@@ -75,7 +75,8 @@ fn check_pair2(s: &str) -> (bool, Vec<[char; 3]>) {
 }
 
 fn main() {
-    let filename = &std::env::args().nth(1).unwrap();
+    let q = &std::env::args().nth(1).unwrap();
+    let filename = &std::env::args().nth(2).unwrap();
     let content : String = utils::read(filename);
 
     for line in content.lines() {
@@ -99,8 +100,8 @@ fn main() {
                 valid = true;
             }
         }
-        if valid {
-            //println!("{}", line);
+        if valid && q == "1" {
+            println!("{}", line);
         }
 
         let mut as_ : Vec<[char; 3]> = Vec::new();
@@ -120,7 +121,7 @@ fn main() {
         for a in as_ {
             let must_be_in_b : [char; 3]= [a[1], a[0], a[1]];
             //println!("{}", a.to_vec().into_iter().collect::<String>());
-            if bs_.contains(&must_be_in_b) {
+            if bs_.contains(&must_be_in_b) && q == "2" {
                 println!("{}", line);
                 break;
             }
