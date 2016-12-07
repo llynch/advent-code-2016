@@ -1,4 +1,4 @@
-import md5
+import hashlib
 import sys
 
 input_ = sys.argv[1]
@@ -7,7 +7,7 @@ count = 0
 nbdigits = 0
 digits = []
 while True:
-    m = md5.new()
+    m = hashlib.md5()
     m.update("{}{}".format(input_, count))
     result = m.hexdigest()
     count += 1
@@ -16,20 +16,20 @@ while True:
         nbdigits += 1
 
     if nbdigits == 8:
-        break;
+        break
 print "".join(digits)
 
 count = 0
 nbdigits = 0
 digits = [" "] * 8
 while True:
-    m = md5.new()
+    m = hashlib.md5()
     m.update("{}{}".format(input_, count))
     result = m.hexdigest()
     count += 1
     if result.startswith("00000"):
         position = result[5]
-        digit = result[6];
+        digit = result[6]
         try:
             pos = int(position)
         except:
@@ -41,10 +41,5 @@ while True:
             nbdigits += 1
 
         if nbdigits == 8:
-            break;
-
+            break
 print "".join(digits)
-
-
-
-
